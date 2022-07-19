@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  bot:
+    build: .
+    env_file: .env
+    links:
+     - redis
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save 60 1
+    volumes:
+      - redis:/data
+volumes:
+  redis: {}

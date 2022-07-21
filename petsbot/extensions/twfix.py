@@ -1,10 +1,14 @@
 import json
 
+import requests
 from . import redisConnPool
+from bs4 import BeautifulSoup
 from redis import Redis
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, Update
 from telegram.ext import CallbackContext
 from urllib.parse import urlsplit
+
+session = requests.Session()
 
 def dismissButton(onlyAllowFrom: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup.from_button(
@@ -16,8 +20,26 @@ def dismissButton(onlyAllowFrom: int) -> InlineKeyboardMarkup:
 
 def fixTwitterUrl(url: str) -> (bool, str):
     parts = urlsplit(url)
-    if (parts.netloc == "twitter.com"):
+
+    if parts.netloc != "twitter.com":
+        return (False, "")
+
+    soup = BeautifulSoup(session.get(url, headers={"User-Agent": "Googlebot"}).text, "html.parser")
+
+    # Case 1: Multiple images
+    images = {x["content"] for x in soup.select("meta[itemProp='contentUrl']")}
+    if len(images) > 1:
+        return (True, "https://c.vxtwitter.com/%s" % parts.path.strip('/'))
+
+    # Case 2: Video
+    image = soup.select_one("meta[property='og:image']")
+    if image and "pbs.twimg.com/ext_tw_video_thumb" in image["content"]:
         return (True, "https://vxtwitter.com/%s" % parts.path.strip('/'))
+
+    # Case 3: Query string
+    if parts.query:
+        return (True, "https://twitter.com/%s" % parts.path.strip('/'))
+
     return (False, "")
 
 async def handleTwfixCommand(update: Update, context: CallbackContext):

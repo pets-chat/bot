@@ -18,7 +18,7 @@ def twfix_dismiss_button(only_allow_from: int) -> InlineKeyboardMarkup:
         )
     )
 
-def fix_twitter_url(url: str) -> str:
+def fix_twitter_url(url: str) -> str | None:
     parts = urlsplit(url)
 
     if parts.netloc != "twitter.com":

@@ -1,7 +1,7 @@
 import json
 
 import requests
-from . import redisConnPool
+from . import redis_connection_pool
 from bs4 import BeautifulSoup
 from redis import Redis
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, Update
@@ -10,15 +10,15 @@ from urllib.parse import urlsplit
 
 session = requests.Session()
 
-def dismissButton(onlyAllowFrom: int) -> InlineKeyboardMarkup:
+def twfix_dismiss_button(only_allow_from: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup.from_button(
         InlineKeyboardButton(
             text="Dismiss",
-            callback_data=json.dumps({ 'type': 'twfix.dismiss', 'allow_from': onlyAllowFrom })
+            callback_data=json.dumps({ 'type': 'twfix.dismiss', 'allow_from': only_allow_from })
         )
     )
 
-def fixTwitterUrl(url: str) -> (bool, str):
+def fix_twitter_url(url: str) -> (bool, str):
     parts = urlsplit(url)
 
     if parts.netloc != "twitter.com":
@@ -42,8 +42,8 @@ def fixTwitterUrl(url: str) -> (bool, str):
 
     return (False, "")
 
-async def handleTwfixCommand(update: Update, context: CallbackContext):
-    redis = Redis(connection_pool=redisConnPool)
+async def handle_twfix_command(update: Update, context: CallbackContext):
+    redis = Redis(connection_pool=redis_connection_pool)
 
     if context.args[0] == "opt-out":
         redis.hset("twfix_opt_out", update.message.from_user.id, 1)
@@ -52,10 +52,10 @@ async def handleTwfixCommand(update: Update, context: CallbackContext):
         redis.hdel("twfix_opt_out", update.message.from_user.id, 0)
         await update.message.reply_text("Okay, I will now automatically fix twitter links you send to this group.")
     else:
-        twfixUrl = fixTwitterUrl(context.args[0])
-        await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfixUrl[1] if twfixUrl[1] else "Not a valid twitter link\.", reply_markup=dismissButton(update.message.from_user.id))
+        twfix_url = fix_twitter_url(context.args[0])
+        await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfix_url[1] if twfix_url[1] else "Not a valid twitter link\.", reply_markup=twfix_dismiss_button(update.message.from_user.id))
 
-async def handleTwfixDismiss(update: Update, context: CallbackContext):
+async def handle_twfix_dismiss(update: Update, context: CallbackContext):
     data = json.loads(update.callback_query.data)
     if data["allow_from"] != update.callback_query.from_user.id:
         await update.callback_query.answer(text="You can't do that, only the OP can do that.")
@@ -63,18 +63,18 @@ async def handleTwfixDismiss(update: Update, context: CallbackContext):
     await update.callback_query.delete_message()
     await update.callback_query.answer(text="Okay, I have now deleted the message.")
 
-async def handleTwfixMessage(update: Update, context: CallbackContext):
-    redis = Redis(connection_pool=redisConnPool)
+async def handle_twfix_message(update: Update, context: CallbackContext):
+    redis = Redis(connection_pool=redis_connection_pool)
 
-    isOptedOut = redis.hget("twfix_opt_out", update.message.from_user.id)
-    if isOptedOut is None:
+    opted_out = redis.hget("twfix_opt_out", update.message.from_user.id)
+    if opted_out is None:
         for entity in update.message.entities:
             if entity.type == MessageEntity.TEXT_LINK:
-                twfixUrl = twfixUrl = fixTwitterUrl(context.args[0])
-                if (twfixUrl[1]):
-                    await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfixUrl[1], reply_markup=dismissButton(update.message.from_user.id))
+                twfix_url = fix_twitter_url(context.args[0])
+                if (twfix_url[1]):
+                    await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfix_url[1], reply_markup=twfix_dismiss_button(update.message.from_user.id))
             elif entity.type == MessageEntity.URL:
                 for part in update.message.text.split(" "):
-                    twfixUrl = fixTwitterUrl(part)
-                    if (fixTwitterUrl(part)[0]):
-                        await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfixUrl[1], reply_markup=dismissButton(update.message.from_user.id))
+                    twfix_url = fix_twitter_url(part)
+                    if (fix_twitter_url(part)[0]):
+                        await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfix_url[1], reply_markup=twfix_dismiss_button(update.message.from_user.id))

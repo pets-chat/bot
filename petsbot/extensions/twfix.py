@@ -29,16 +29,16 @@ def fix_twitter_url(url: str) -> (bool, str):
     # Case 1: Multiple images
     images = {x["content"] for x in soup.select("meta[itemProp='contentUrl']")}
     if len(images) > 1:
-        return (True, "https://c.vxtwitter.com/%s" % parts.path.strip('/'))
+        return (True, f"https://c.vxtwitter.com{parts.path}")
 
     # Case 2: Video
     image = soup.select_one("meta[property='og:image']")
     if image and "pbs.twimg.com/ext_tw_video_thumb" in image["content"]:
-        return (True, "https://vxtwitter.com/%s" % parts.path.strip('/'))
+        return (True, f"https://vxtwitter.com{parts.path}")
 
     # Case 3: Query string
     if parts.query:
-        return (True, "https://twitter.com/%s" % parts.path.strip('/'))
+        return (True, f"https://twitter.com{parts.path}")
 
     return (False, "")
 
@@ -53,7 +53,7 @@ async def handle_twfix_command(update: Update, context: CallbackContext):
         await update.message.reply_text("Okay, I will now automatically fix twitter links you send to this group.")
     else:
         twfix_url = fix_twitter_url(context.args[0])
-        await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfix_url[1] if twfix_url[1] else "Not a valid twitter link\.", reply_markup=twfix_dismiss_button(update.message.from_user.id))
+        await update.message.reply_markdown_v2(f"[TwitFixed\!]({twfix_url[1]})" if twfix_url[1] else "Not a valid twitter link\.", reply_markup=twfix_dismiss_button(update.message.from_user.id))
 
 async def handle_twfix_dismiss(update: Update, context: CallbackContext):
     data = json.loads(update.callback_query.data)
@@ -72,9 +72,9 @@ async def handle_twfix_message(update: Update, context: CallbackContext):
             if entity.type == MessageEntity.TEXT_LINK:
                 twfix_url = fix_twitter_url(context.args[0])
                 if (twfix_url[1]):
-                    await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfix_url[1], reply_markup=twfix_dismiss_button(update.message.from_user.id))
+                    await update.message.reply_markdown_v2(f"[TwitFixed\!]({twfix_url[1]})", reply_markup=twfix_dismiss_button(update.message.from_user.id))
             elif entity.type == MessageEntity.URL:
                 for part in update.message.text.split(" "):
                     twfix_url = fix_twitter_url(part)
                     if (fix_twitter_url(part)[0]):
-                        await update.message.reply_markdown_v2("[TwitFixed\!](%s)" % twfix_url[1], reply_markup=twfix_dismiss_button(update.message.from_user.id))
+                        await update.message.reply_markdown_v2(f"[TwitFixed\!]({twfix_url[1]})", reply_markup=twfix_dismiss_button(update.message.from_user.id))

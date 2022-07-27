@@ -34,7 +34,7 @@ def fix_twitter_url(url: str) -> str | None:
     # Case 2: Video
     image = soup.select_one("meta[property='og:image']")
     if image and "pbs.twimg.com/ext_tw_video_thumb" in image["content"]:
-        return f"https://vxtwitter.com{parts.path}"
+        return f"https://fxtwitter.com{parts.path}"
 
     return None
 

@@ -18,7 +18,7 @@ def twfix_dismiss_button(only_allow_from: int) -> InlineKeyboardMarkup:
         )
     )
 
-def fix_twitter_url(url: str) -> str | None:
+def fix_twitter_url(url: str, force: bool = False) -> str | None:
     parts = urlsplit(url)
 
     if parts.netloc != "twitter.com":
@@ -36,6 +36,10 @@ def fix_twitter_url(url: str) -> str | None:
     if image and "pbs.twimg.com/ext_tw_video_thumb" in image["content"]:
         return f"https://fxtwitter.com{parts.path}"
 
+    # Case 3: Manual fix requested
+    if force:
+        return f"https://fxtwitter.com{parts.path}"
+
     return None
 
 async def handle_twfix_command(update: Update, context: CallbackContext):
@@ -48,7 +52,7 @@ async def handle_twfix_command(update: Update, context: CallbackContext):
         redis.hdel("twfix_opt_out", update.message.from_user.id, 0)
         await update.message.reply_text("Okay, I will now automatically fix twitter links you send to this group.")
     else:
-        twfix_url = fix_twitter_url(context.args[0])
+        twfix_url = fix_twitter_url(context.args[0], force=True)
         await update.message.reply_markdown_v2(f"[TwitFixed\!]({twfix_url})" if twfix_url is not None else "Not a valid twitter link\.", reply_markup=twfix_dismiss_button(update.message.from_user.id))
 
 async def handle_twfix_dismiss(update: Update, context: CallbackContext):

@@ -36,10 +36,6 @@ def fix_twitter_url(url: str) -> str | None:
     if image and "pbs.twimg.com/ext_tw_video_thumb" in image["content"]:
         return f"https://vxtwitter.com{parts.path}"
 
-    # Case 3: Query string
-    if parts.query:
-        return f"https://twitter.com{parts.path}"
-
     return None
 
 async def handle_twfix_command(update: Update, context: CallbackContext):

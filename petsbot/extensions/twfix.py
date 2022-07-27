@@ -1,4 +1,5 @@
 import json
+import uuid
 
 import requests
 from . import redis_connection_pool
@@ -9,6 +10,9 @@ from telegram.ext import CallbackContext
 from urllib.parse import urlsplit
 
 session = requests.Session()
+
+class TwitterAPIError(Exception):
+    pass
 
 def twfix_dismiss_button(only_allow_from: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup.from_button(
@@ -24,16 +28,37 @@ def fix_twitter_url(url: str, force: bool = False) -> str | None:
     if parts.netloc != "twitter.com":
         return None
 
-    soup = BeautifulSoup(session.get(url, headers={"User-Agent": "Googlebot"}).text, "html.parser")
+    tweet_id = parts.path.rstrip("/").split("/")[-1]
+    csrf_token = uuid.uuid4().hex
+
+    r = session.get(
+        url=f"https://api.twitter.com/1.1/statuses/show/{tweet_id}.json",
+        params={
+            "tweet_mode": "extended",
+        },
+        headers={
+            "Accept": "application/json",
+            "Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs=1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+            "x-csrf-token": csrf_token
+        },
+        cookies={
+            "ct0": csrf_token
+        }
+    )
+    try:
+        tweet = r.json()
+    except json.JSONDecodeError:
+        r.raise_for_status()
+    if "errors" in tweet:
+        raise TwitterAPIError(tweet["errors"])
 
     # Case 1: Multiple images
-    images = {x["content"] for x in soup.select("meta[itemProp='contentUrl']")}
-    if len(images) > 1:
+    if len(tweet.get("entities", {}).get("media", [])) > 1:
         return f"https://c.vxtwitter.com{parts.path}"
 
     # Case 2: Video
-    image = soup.select_one("meta[property='og:image']")
-    if image and "pbs.twimg.com/ext_tw_video_thumb" in image["content"]:
+    if tweet.get("extended_entities", {}).get("media") and tweet["extended_entities"]["media"][0]["type"] == "video":
         return f"https://fxtwitter.com{parts.path}"
 
     # Case 3: Manual fix requested

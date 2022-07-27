@@ -3,7 +3,6 @@ import uuid
 
 import requests
 from . import redis_connection_pool
-from bs4 import BeautifulSoup
 from redis import Redis
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, Update
 from telegram.ext import CallbackContext

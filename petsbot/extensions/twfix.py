@@ -45,14 +45,18 @@ def fix_twitter_url(url: str, force: bool = False) -> str | None:
 async def handle_twfix_command(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool)
 
-    if context.args[0] == "opt-out":
+    if context.args and context.args[0] == "opt-out":
         redis.hset("twfix_opt_out", update.message.from_user.id, 1)
         await update.message.reply_text("Okay, I won't automatically fix twitter links you send to this group.")
-    elif context.args[0] == "opt-in":
+    elif context.args and context.args[0] == "opt-in":
         redis.hdel("twfix_opt_out", update.message.from_user.id, 0)
         await update.message.reply_text("Okay, I will now automatically fix twitter links you send to this group.")
     else:
-        twfix_url = fix_twitter_url(context.args[0], force=True)
+        if context.args:
+            url = context.args[0]
+        elif update.message.reply_to_message:
+            url = update.message.reply_to_message.text
+        twfix_url = fix_twitter_url(url, force=True)
         await update.message.reply_markdown_v2(f"[TwitFixed\!]({twfix_url})" if twfix_url is not None else "Not a valid twitter link\.", reply_markup=twfix_dismiss_button(update.message.from_user.id))
 
 async def handle_twfix_dismiss(update: Update, context: CallbackContext):

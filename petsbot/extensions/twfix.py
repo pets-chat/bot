@@ -1,14 +1,17 @@
 import json
+import uuid
 
 import requests
 from . import redis_connection_pool
-from bs4 import BeautifulSoup
 from redis import Redis
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, Update
 from telegram.ext import CallbackContext
 from urllib.parse import urlsplit
 
 session = requests.Session()
+
+class TwitterAPIError(Exception):
+    pass
 
 def twfix_dismiss_button(only_allow_from: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup.from_button(
@@ -18,41 +21,66 @@ def twfix_dismiss_button(only_allow_from: int) -> InlineKeyboardMarkup:
         )
     )
 
-def fix_twitter_url(url: str) -> str | None:
+def fix_twitter_url(url: str, force: bool = False) -> str | None:
     parts = urlsplit(url)
 
     if parts.netloc != "twitter.com":
         return None
 
-    soup = BeautifulSoup(session.get(url, headers={"User-Agent": "Googlebot"}).text, "html.parser")
+    tweet_id = parts.path.rstrip("/").split("/")[-1]
+    csrf_token = uuid.uuid4().hex
+
+    r = session.get(
+        url=f"https://api.twitter.com/1.1/statuses/show/{tweet_id}.json",
+        params={
+            "tweet_mode": "extended",
+        },
+        headers={
+            "Accept": "application/json",
+            "Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs=1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+            "x-csrf-token": csrf_token
+        },
+        cookies={
+            "ct0": csrf_token
+        }
+    )
+    try:
+        tweet = r.json()
+    except json.JSONDecodeError:
+        r.raise_for_status()
+    if "errors" in tweet:
+        raise TwitterAPIError(tweet["errors"])
 
     # Case 1: Multiple images
-    images = {x["content"] for x in soup.select("meta[itemProp='contentUrl']")}
-    if len(images) > 1:
+    if len(tweet.get("entities", {}).get("media", [])) > 1:
         return f"https://c.vxtwitter.com{parts.path}"
 
     # Case 2: Video
-    image = soup.select_one("meta[property='og:image']")
-    if image and "pbs.twimg.com/ext_tw_video_thumb" in image["content"]:
-        return f"https://vxtwitter.com{parts.path}"
+    if tweet.get("extended_entities", {}).get("media") and tweet["extended_entities"]["media"][0]["type"] == "video":
+        return f"https://fxtwitter.com{parts.path}"
 
-    # Case 3: Query string
-    if parts.query:
-        return f"https://twitter.com{parts.path}"
+    # Case 3: Manual fix requested
+    if force:
+        return f"https://fxtwitter.com{parts.path}"
 
     return None
 
 async def handle_twfix_command(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool)
 
-    if context.args[0] == "opt-out":
+    if context.args and context.args[0] == "opt-out":
         redis.hset("twfix_opt_out", update.message.from_user.id, 1)
         await update.message.reply_text("Okay, I won't automatically fix twitter links you send to this group.")
-    elif context.args[0] == "opt-in":
+    elif context.args and context.args[0] == "opt-in":
         redis.hdel("twfix_opt_out", update.message.from_user.id, 0)
         await update.message.reply_text("Okay, I will now automatically fix twitter links you send to this group.")
     else:
-        twfix_url = fix_twitter_url(context.args[0])
+        if context.args:
+            url = context.args[0]
+        elif update.message.reply_to_message:
+            url = update.message.reply_to_message.text
+        twfix_url = fix_twitter_url(url, force=True)
         await update.message.reply_markdown_v2(f"[TwitFixed\!]({twfix_url})" if twfix_url is not None else "Not a valid twitter link\.", reply_markup=twfix_dismiss_button(update.message.from_user.id))
 
 async def handle_twfix_dismiss(update: Update, context: CallbackContext):

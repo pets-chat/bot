@@ -6,7 +6,7 @@ from telegram.error import BadRequest
 
 async def handle_pronouns_command(update: Update, context: CallbackContext):
     if not re.match(r"^[a-zA-Z]+(\/[a-zA-Z]+){1,2}$", context.args[0]) or len(context.args[0]) > 16:
-        await update.message.reply_text("Must be under 16 characters, and have slashes in the middle (up to two).")
+        await update.message.reply_text("Must be 16 characters (or less), and have slashes in the middle (up to two).")
         return
 
     try:

@@ -1,11 +1,12 @@
+import re
 from telegram import Update
 from telegram.constants import ChatMemberStatus
 from telegram.ext import CallbackContext
 from telegram.error import BadRequest
 
 async def handle_pronouns_command(update: Update, context: CallbackContext):
-    if "/" not in context.args[0]:
-        await update.message.reply_text("Please put at least one '/' in your pronouns.")
+    if not re.match(r"^[a-z]+(\/[a-z]+){1,2}$", context.args[0]) or len(context.args[0]) > 16:
+        await update.message.reply_text("Must be under 16 characters, and have slashes in the middle (up to two).")
         return
 
     try:
@@ -15,6 +16,7 @@ async def handle_pronouns_command(update: Update, context: CallbackContext):
 
         await update.message.chat.set_administrator_custom_title(update.message.from_user.id, context.args[0])
     except BadRequest as error:
-        await update.message.reply_text(f"Error: BadRequest: {error}")
+        await update.message.reply_markdown_v2(f"Error: BadRequest: `{error}`")
     else:
-        await update.message.reply_text("Okay, I have set your admin title to these pronouns.")
+        await update.message.reply_markdown_v2(f"Okay, I have set your admin title to `{context.args[0]}`\.")
+        

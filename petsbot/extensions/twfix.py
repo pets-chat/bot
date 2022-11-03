@@ -58,11 +58,11 @@ def fix_twitter_url(url: str, force: bool = False) -> str | None:
 
     # Case 2: Video
     if tweet.get("extended_entities", {}).get("media") and tweet["extended_entities"]["media"][0]["type"] == "video":
-        return f"https://fxtwitter.com{parts.path}"
+        return f"https://vxtwitter.com{parts.path}"
 
     # Case 3: Manual fix requested
     if force:
-        return f"https://fxtwitter.com{parts.path}"
+        return f"https://vxtwitter.com{parts.path}"
 
     return None
 

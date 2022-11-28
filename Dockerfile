@@ -7,4 +7,4 @@ RUN pip install python-telegram-bot --pre
 RUN pip install redis
 RUN pip install requests
 
-CMD ["python", "/app/__main__.py"]
+CMD ["python", "-u", "/app/__main__.py"]

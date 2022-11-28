@@ -81,7 +81,7 @@ async def handle_present_message(update: Update, context: CallbackContext):
     if last_user_id != update.message.from_user.id or last_user_id is None:
         redis.set("last_from_id", update.message.from_user.id)
         number = random.randrange(1, 100)
-        if number <= 15:
+        if number <= 10:
             output_receiver_name = random.choice(NAMES)
             output_receiver_want = random.choice(PRESENTS)
             output_receiver_hash = hash(output_receiver_want)

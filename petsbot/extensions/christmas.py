@@ -95,8 +95,8 @@ async def handle_present_message(update: Update, context: CallbackContext):
 
 async def present_message(update: Update, context: CallbackContext, redis: Redis, ignore_probability_check: bool):
     redis.set("last_from_id", update.message.from_user.id)
-    number = random.randrange(1, 500)
-    if number <= 10 or ignore_probability_check:
+    number = random.randrange(1, 1000)
+    if number <= 50 or ignore_probability_check:
         output_receiver_name = random.choice(NAMES)
         output_receiver_want = random.choice(PRESENTS)
         output_receiver_hash = hash(output_receiver_want)

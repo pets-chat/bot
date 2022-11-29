@@ -44,7 +44,12 @@ async def handle_present_callback(update: Update, context: CallbackContext):
 
     saved_data = json.loads(redis.hget("xmas.presents_map", update.callback_query.message.id))
     if saved_data["hash"] != data["data"]:
-        await update.callback_query.answer(f"{saved_data['name']} didn't want that present!")
+        await update.callback_query.message.edit_text(
+            f"*{escape_markdown(update.callback_query.from_user.first_name, version=2)}* scared *{saved_data['name']}* off! They asked for: *{saved_data['want']}*, however they were given something else\!",
+            parse_mode="MarkdownV2",
+            reply_markup=None
+        )
+        redis.hdel("xmas.presents_map", update.callback_query.message.id)
         return
 
     # Item grade?

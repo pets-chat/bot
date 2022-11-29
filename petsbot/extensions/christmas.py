@@ -16,10 +16,11 @@ RARE = ["minature sleigh", "roast turkey", "ornament", "snowglobe", "glass of ho
 EPIC = ["some gold", "some frankincense", "some myrrh", "elf on the shelf", "five golden rings", "six geese"]
 
 async def handle_present_command(update: Update, context: CallbackContext):
+    redis = Redis(connection_pool=redis_connection_pool, decode_responses=True)
     # We only want some people to activate the present command
     if update.message.from_user.username == "estrofem":
         await update.message.chat.delete_message(update.message.reply_message_id)
-        await present_message(update, context)
+        await present_message(update, context, redis)
 
 async def handle_leaderboard_command(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool, decode_responses=True)
@@ -90,9 +91,9 @@ async def handle_present_message(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool, decode_responses=True)
     last_user_id = int(redis.get("last_from_id"))
     if last_user_id != update.message.from_user.id or last_user_id is None:
-        await present_message(update, context)
+        await present_message(update, context, redis)
 
-async def present_message(update: Update, context: CallbackContext):
+async def present_message(update: Update, context: CallbackContext, redis: Redis):
     redis.set("last_from_id", update.message.from_user.id)
     number = random.randrange(1, 500)
     if number <= 10:

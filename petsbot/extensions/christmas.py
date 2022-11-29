@@ -35,7 +35,7 @@ async def handle_leaderboard_command(update: Update, context: CallbackContext):
     for x in range(0, min(len(leaderboard), 8)):
         output += f"*{x + 1}\.* {users[x]} \({values[x]}\)\n"
     await update.message.chat.send_message(
-        f"*These players have the most items so far:*\n\n{output}",
+        f"*These players have the most items so far:*\n\n{'Nobody is yet on the leaderboard' if len(output) == 0 else output}",
         parse_mode="MarkdownV2"
     )
 

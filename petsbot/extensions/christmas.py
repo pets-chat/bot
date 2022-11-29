@@ -26,7 +26,7 @@ async def handle_leaderboard_command(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool, decode_responses=True)
     values = redis.hgetall("xmas.leaderboard")
     leaderboard = {}
-    for key, val in sorted(values.items(), key=lambda x: x[1]):
+    for key, val in sorted(values.items(), key=lambda l: int(l[1]), reverse=True):
         member = await update.message.chat.get_member(int(key))
         leaderboard[escape_markdown(member.user.first_name, version=2)] = int(val)
 

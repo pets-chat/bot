@@ -15,6 +15,12 @@ UNCOMMON = ["christmas jumper", "some stocking stuffers", "christmas stocking", 
 RARE = ["minature sleigh", "roast turkey", "ornament", "snowglobe", "glass of hot chocolate", "some christmas pudding", "two turtle doves", "four calling birds", "seven swans"]
 EPIC = ["some gold", "some frankincense", "some myrrh", "elf on the shelf", "five golden rings", "six geese"]
 
+async def handle_present_command(update: Update, context: CallbackContext):
+    # We only want some people to activate the present command
+    if update.message.from_user.username == "estrofem":
+        await update.message.chat.delete_message(update.message.reply_message_id)
+        await present_message(update, context)
+
 async def handle_leaderboard_command(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool, decode_responses=True)
     values = redis.hgetall("xmas.leaderboard")
@@ -84,29 +90,32 @@ async def handle_present_message(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool, decode_responses=True)
     last_user_id = int(redis.get("last_from_id"))
     if last_user_id != update.message.from_user.id or last_user_id is None:
-        redis.set("last_from_id", update.message.from_user.id)
-        number = random.randrange(1, 500)
-        if number <= 10:
-            output_receiver_name = random.choice(NAMES)
-            output_receiver_want = random.choice(PRESENTS)
-            output_receiver_hash = hash(output_receiver_want)
-            presents_without_want = [x for x in PRESENTS if x != output_receiver_want]
-            choices = random.sample(presents_without_want, 3)
-            choices.append(output_receiver_want)
-            random.shuffle(choices)
-            ch_data = list(map(lambda c: hash(c) if c != output_receiver_want else output_receiver_hash, choices))
-            keyboard = [
-                [
-                    InlineKeyboardButton(choices[0], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[0]})),
-                    InlineKeyboardButton(choices[1], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[1]}))
-                ], [
-                    InlineKeyboardButton(choices[2], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[2]})),
-                    InlineKeyboardButton(choices[3], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[3]}))
-                ]
+        await present_message(update, context)
+
+async def present_message(update: Update, context: CallbackContext):
+    redis.set("last_from_id", update.message.from_user.id)
+    number = random.randrange(1, 500)
+    if number <= 10:
+        output_receiver_name = random.choice(NAMES)
+        output_receiver_want = random.choice(PRESENTS)
+        output_receiver_hash = hash(output_receiver_want)
+        presents_without_want = [x for x in PRESENTS if x != output_receiver_want]
+        choices = random.sample(presents_without_want, 3)
+        choices.append(output_receiver_want)
+        random.shuffle(choices)
+        ch_data = list(map(lambda c: hash(c) if c != output_receiver_want else output_receiver_hash, choices))
+        keyboard = [
+            [
+                InlineKeyboardButton(choices[0], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[0]})),
+                InlineKeyboardButton(choices[1], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[1]}))
+            ], [
+                InlineKeyboardButton(choices[2], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[2]})),
+                InlineKeyboardButton(choices[3], callback_data=json.dumps({'type': 'xmas.present', 'data': ch_data[3]}))
             ]
-            message = await update.message.chat.send_message(
-                f"*New Present Drop\!*\n\n*{output_receiver_name}* would like to receive: *{output_receiver_want}*\!",
-                parse_mode="MarkdownV2",
-                reply_markup=InlineKeyboardMarkup(keyboard)
-            )
-            redis.hset("xmas.presents_map", message.id, json.dumps({"hash": output_receiver_hash, "want": output_receiver_want, "name": output_receiver_name}))
+        ]
+        message = await update.message.chat.send_message(
+            f"*New Present Drop\!*\n\n*{output_receiver_name}* would like to receive: *{output_receiver_want}*\!",
+            parse_mode="MarkdownV2",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        redis.hset("xmas.presents_map", message.id, json.dumps({"hash": output_receiver_hash, "want": output_receiver_want, "name": output_receiver_name}))

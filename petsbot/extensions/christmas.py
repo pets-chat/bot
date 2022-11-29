@@ -8,7 +8,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 from telegram.helpers import escape_markdown
 
-PRESENTS = ["Steam Deck", "AMD Computer", "Nintendo Switch", "Chocolate", "Slippers", "Train Set", "Pokémon Game", "Coal", "Money"]
+PRESENTS = ["Steam Deck", "MacBook", "Nintendo Switch", "Chocolate", "Slippers", "Train Set", "Pokémon Game", "Coal", "Money", "Android Phone", "iPhone", "Wheel & Pedals", "Controller", "Mechanical Keyboard", "Monitor"]
 NAMES = ["Melissa", "Liam", "Ari", "Alexia", "Zack", "Astrid", "Aurora", "Marissa", "Daniel", "Brandon", "Ryan", "Justin", "Ashley", "Gabrielle", "Stefan", "Paul", "Dave"]
 COMMON = ["glass of milk", "carrot", "cookie", "candy cane", "some gingerbread men", "some fudge", "some tinsel", "some holly", "wreath", "some ribbon", "some sleigh bells", "wrapping paper", "partrich"]
 UNCOMMON = ["christmas jumper", "some stocking stuffers", "christmas stocking", "gingerbread house", "minature snowman", "santa hat", "humbug hat", "some mistletoe", "yule log", "three french hens"]
@@ -48,7 +48,7 @@ async def handle_present_callback(update: Update, context: CallbackContext):
         return
 
     # Item grade?
-    rarity = random.choices(['c', 'u', 'r', 'e'], [80, 14, 5, 1])
+    rarity = random.choices(['c', 'u', 'r', 'e'], [950, 39, 10, 1])
     if rarity[0] == 'e':
         return_item = random.choice(EPIC) + ' (Epic)'
     elif rarity[0] == 'r':
@@ -80,7 +80,7 @@ async def handle_present_message(update: Update, context: CallbackContext):
     last_user_id = int(redis.get("last_from_id"))
     if last_user_id != update.message.from_user.id or last_user_id is None:
         redis.set("last_from_id", update.message.from_user.id)
-        number = random.randrange(1, 100)
+        number = random.randrange(1, 500)
         if number <= 10:
             output_receiver_name = random.choice(NAMES)
             output_receiver_want = random.choice(PRESENTS)

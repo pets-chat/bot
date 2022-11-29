@@ -19,7 +19,7 @@ async def handle_present_command(update: Update, context: CallbackContext):
     redis = Redis(connection_pool=redis_connection_pool, decode_responses=True)
     # We only want some people to activate the present command
     if update.message.from_user.username == "estrofem":
-        await update.message.chat.delete_message(update.message.reply_message_id)
+        await update.message.delete()
         await present_message(update, context, redis)
 
 async def handle_leaderboard_command(update: Update, context: CallbackContext):

@@ -68,7 +68,7 @@ async def handle_present_callback(update: Update, context: CallbackContext):
     elif rarity[0] == 'u':
         return_item = random.choice(UNCOMMON) + ' (Uncommon)'
     else:
-        return_item = random.choice(UNCOMMON) + ' (Common)'
+        return_item = random.choice(COMMON) + ' (Common)'
 
     item_response = redis.hget(f"xmas.items.{from_user}", return_item)
     has_item = item_response is not None and int(item_response) > 0

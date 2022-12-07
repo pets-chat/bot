@@ -8,7 +8,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 from telegram.helpers import escape_markdown
 
-PRESENTS = ["Steam Deck", "MacBook", "Nintendo Switch", "Chocolate", "Slippers", "Train Set", "Pokémon Game", "Coal", "Money", "Android Phone", "iPhone", "Wheel & Pedals", "Controller", "Mechanical Keyboard", "Monitor"]
+PRESENTS = ["Steam Deck", "MacBook", "Nintendo Switch", "Chocolate", "Slippers", "Train Set", "Pokémon Game", "Coal", "Money", "Android Phone", "iPhone", "Wheel & Pedals", "Controller", "Mechanical Keyboard", "Monitor", "Yubikey", "Cheese"]
 NAMES = ["Melissa", "Liam", "Ari", "Alexia", "Zack", "Astrid", "Aurora", "Marissa", "Daniel", "Brandon", "Ryan", "Justin", "Ashley", "Gabrielle", "Stefan", "Paul", "Dave"]
 COMMON = ["glass of milk", "carrot", "cookie", "candy cane", "some gingerbread men", "some fudge", "some tinsel", "some holly", "wreath", "some ribbon", "some sleigh bells", "wrapping paper", "partrich"]
 UNCOMMON = ["christmas jumper", "some stocking stuffers", "christmas stocking", "gingerbread house", "minature snowman", "santa hat", "humbug hat", "some mistletoe", "yule log", "three french hens"]

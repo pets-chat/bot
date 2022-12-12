@@ -1,14 +1,24 @@
 version: "3.9"
+
 services:
   bot:
     build: .
     env_file: .env
+    restart: unless-stopped
     links:
      - redis
+
   redis:
     image: redis:7-alpine
     command: redis-server --save 60 1
     volumes:
       - redis:/data
+    restart: unless-stopped
+    healthcheck:
+      test: redis-cli ping
+      interval: 30s
+      timeout: 5s
+      retries: 2
+
 volumes:
   redis: {}

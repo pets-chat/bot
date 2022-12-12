@@ -60,7 +60,7 @@ async def handle_present_callback(update: Update, context: CallbackContext):
         return
 
     # Item grade?
-    rarity = random.choices(['c', 'u', 'r', 'e'], [950, 39, 10, 1])
+    rarity = random.choices(['c', 'u', 'r', 'e'], [800, 125, 50, 25])
     if rarity[0] == 'e':
         return_item = random.choice(EPIC) + ' (Epic)'
     elif rarity[0] == 'r':
